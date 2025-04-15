@@ -1,0 +1,15 @@
+.my_serif_text {
+    font-family: serif;
+}
+
+.my_special_color {
+    color:rgb(26, 26, 107) !important;
+}
+
+.my_background_color {
+    background-color: rgb(125, 125, 247) !important;
+}
+
+.my_text_color {
+    color: rgb(125, 125, 247) !important;
+}

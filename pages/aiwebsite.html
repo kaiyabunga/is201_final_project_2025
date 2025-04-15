@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Game Arcade</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎮</text></svg>">
+    <style>
+        /* Custom styles */
+        body {
+            font-family: 'Inter', sans-serif; /* Using Inter font as requested */
+            overscroll-behavior: none; /* Prevent pull-to-refresh */
+        }
+        /* Style for game canvas */
+        canvas {
+            display: block;
+            background-color: #a3bfb1; /* Light green-grey canvas background */
+            border-radius: 0.5rem; /* Rounded corners for canvas */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        /* Simple progress bar styling */
+        progress {
+            width: 100%;
+            height: 1rem;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+        progress::-webkit-progress-bar {
+            background-color: #4a5568; /* Gray background */
+        }
+        progress::-webkit-progress-value {
+            background-color: #48bb78; /* Green progress */
+        }
+        progress::-moz-progress-bar {
+            background-color: #48bb78; /* Green progress */
+        }
+        /* Button hover effect */
+        .game-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
+        }
+        .game-button {
+            transition: all 0.2s ease-in-out;
+        }
+        /* Ensure body takes full height */
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+        /* Center content vertically */
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+        main {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        /* Prevent text selection on buttons */
+        .noselect {
+          -webkit-touch-callout: none; /* iOS Safari */
+            -webkit-user-select: none; /* Safari */
+             -khtml-user-select: none; /* Konqueror HTML */
+               -moz-user-select: none; /* Old versions of Firefox */
+                -ms-user-select: none; /* Internet Explorer/Edge */
+                    user-select: none; /* Non-prefixed version, currently
+                                          supported by Chrome, Edge, Opera and Firefox */
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-b from-green-900 to-green-800 text-green-100 min-h-screen flex flex-col items-center p-4">
+
+    <header class="w-full max-w-4xl text-center mb-6">
+        <h1 class="text-4xl font-bold text-white mb-2">Mini Game Arcade</h1>
+        <p class="text-green-200">Choose a game to play!</p>
+    </header>
+
+    <nav class="mb-6">
+        <button id="show-pokemon" class="game-button bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg shadow-md mr-2 noselect">Creature Battle</button>
+        <button id="show-mario" class="game-button bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg shadow-md noselect">Platform Jumper</button>
+    </nav>
+
+    <main class="w-full max-w-4xl bg-green-800/50 p-6 rounded-lg shadow-xl flex-grow flex items-center justify-center">
+
+        <div id="pokemon-game" class="w-full hidden">
+            <h2 class="text-2xl font-semibold text-center mb-4 text-white">Creature Battle!</h2>
+            <div class="grid grid-cols-2 gap-4 items-start mb-4">
+                <div class="bg-green-700 p-4 rounded-lg shadow-md text-center">
+                    <div id="player-sprite" class="text-6xl mb-2">🦊</div>
+                    <h3 id="player-name" class="text-xl font-bold text-white">Player Fox</h3>
+                    <progress id="player-hp-bar" value="100" max="100"></progress>
+                    <p id="player-hp-text" class="text-sm text-green-200 mt-1">HP: 100 / 100</p>
+                </div>
+                <div class="bg-red-700 p-4 rounded-lg shadow-md text-center">
+                    <div id="cpu-sprite" class="text-6xl mb-2">🐻</div>
+                    <h3 id="cpu-name" class="text-xl font-bold text-white">CPU Bear</h3>
+                    <progress id="cpu-hp-bar" value="100" max="100"></progress>
+                    <p id="cpu-hp-text" class="text-sm text-red-200 mt-1">HP: 100 / 100</p>
+                </div>
+            </div>
+
+            <div id="action-buttons" class="flex justify-center gap-2 mb-4">
+                <button id="attack1" class="game-button bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded noselect">Tackle</button>
+                <button id="attack2" class="game-button bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded noselect">Growl</button>
+                 <button id="attack3" class="game-button bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded noselect">Quick Attack</button>
+            </div>
+
+            <div id="message-log" class="bg-gray-700 p-3 rounded-lg h-24 overflow-y-auto text-sm text-gray-200 shadow-inner">
+                Welcome to Creature Battle! Choose an attack.
+            </div>
+
+             <div class="text-center mt-4">
+                <button id="reset-battle" class="game-button bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded noselect hidden">Play Again</button>
+            </div>
+        </div>
+
+        <div id="mario-game" class="w-full hidden text-center">
+            <h2 class="text-2xl font-semibold mb-4 text-white">Platform Jumper!</h2>
+            <p class="text-green-200 mb-2">Use Arrow Keys to Move & Jump. Collect the stars!</p>
+            <canvas id="gameCanvas" width="600" height="400" class="mx-auto"></canvas>
+            <p id="mario-score" class="mt-2 text-lg font-semibold text-white">Score: 0</p>
+             <div class="text-center mt-4">
+                 <button id="reset-jumper" class="game-button bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded noselect">Restart Level</button>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="w-full max-w-4xl text-center mt-6 text-sm text-green-300">
+        Simple games created in a single HTML file.
+    </footer>
+
+    <script>
+        // --- Global Variables & Elements ---
+        const pokemonGameContainer = document.getElementById('pokemon-game');
+        const marioGameContainer = document.getElementById('mario-game');
+        const showPokemonButton = document.getElementById('show-pokemon');
+        const showMarioButton = document.getElementById('show-mario');
+
+        // --- Game Switching Logic ---
+        function showGame(gameToShow) {
+            pokemonGameContainer.classList.add('hidden');
+            marioGameContainer.classList.add('hidden');
+
+            if (gameToShow === 'pokemon') {
+                pokemonGameContainer.classList.remove('hidden');
+                // Optional: Initialize or reset pokemon game state if needed
+                if (!pokemonGame.initialized) {
+                    pokemonGame.init();
+                }
+            } else if (gameToShow === 'mario') {
+                marioGameContainer.classList.remove('hidden');
+                // Optional: Initialize or start mario game loop if needed
+                if (!platformerGame.running) {
+                     platformerGame.init(); // Initialize if not already
+                     platformerGame.startGameLoop();
+                }
+            }
+        }
+
+        showPokemonButton.addEventListener('click', () => showGame('pokemon'));
+        showMarioButton.addEventListener('click', () => showGame('mario'));
+
+        // --- Pokémon-like Game Logic ---
+        const pokemonGame = {
+            initialized: false,
+            player: {
+                name: "Player Fox",
+                sprite: "🦊",
+                hp: 100,
+                maxHp: 100,
+                moves: [
+                    { name: "Tackle", power: 10, effect: null },
+                    { name: "Growl", power: 0, effect: "lower_attack", target: "cpu" }, // Example effect
+                    { name: "Quick Attack", power: 8, effect: null }
+                ],
+                attackModifier: 1, // For effects like Growl
+            },
+            cpu: {
+                name: "CPU Bear",
+                sprite: "🐻",
+                hp: 100,
+                maxHp: 100,
+                moves: [
+                    { name: "Scratch", power: 9, effect: null },
+                    { name: "Leer", power: 0, effect: "lower_defense", target: "player" }, // Placeholder effect
+                    { name: "Roar", power: 0, effect: null } // Placeholder
+                ],
+                attackModifier: 1,
+            },
+            elements: {
+                playerSprite: document.getElementById('player-sprite'),
+                playerName: document.getElementById('player-name'),
+                playerHpBar: document.getElementById('player-hp-bar'),
+                playerHpText: document.getElementById('player-hp-text'),
+                cpuSprite: document.getElementById('cpu-sprite'),
+                cpuName: document.getElementById('cpu-name'),
+                cpuHpBar: document.getElementById('cpu-hp-bar'),
+                cpuHpText: document.getElementById('cpu-hp-text'),
+                messageLog: document.getElementById('message-log'),
+                actionButtons: document.getElementById('action-buttons'),
+                attack1Btn: document.getElementById('attack1'),
+                attack2Btn: document.getElementById('attack2'),
+                attack3Btn: document.getElementById('attack3'),
+                resetBattleBtn: document.getElementById('reset-battle'),
+            },
+
+            init() {
+                this.resetGame(); // Reset state on init
+                this.setupEventListeners();
+                this.updateUI();
+                this.logMessage("Game Initialized. Your turn!");
+                this.initialized = true;
+            },
+
+            resetGame() {
+                // Reset HP and modifiers
+                this.player.hp = this.player.maxHp;
+                this.cpu.hp = this.cpu.maxHp;
+                this.player.attackModifier = 1;
+                this.cpu.attackModifier = 1;
+
+                // Reset UI
+                this.updateUI();
+                this.elements.messageLog.innerHTML = "Welcome to Creature Battle! Choose an attack.";
+                this.elements.actionButtons.classList.remove('hidden');
+                this.elements.resetBattleBtn.classList.add('hidden');
+
+                 // Re-enable buttons if they were disabled
+                this.elements.attack1Btn.disabled = false;
+                this.elements.attack2Btn.disabled = false;
+                this.elements.attack3Btn.disabled = false;
+            },
+
+
+            setupEventListeners() {
+                this.elements.attack1Btn.onclick = () => this.playerTurn(this.player.moves[0]);
+                this.elements.attack2Btn.onclick = () => this.playerTurn(this.player.moves[1]);
+                this.elements.attack3Btn.onclick = () => this.playerTurn(this.player.moves[2]);
+                this.elements.resetBattleBtn.onclick = () => this.resetGame();
+            },
+
+            updateUI() {
+                // Update Player UI
+                this.elements.playerSprite.textContent = this.player.sprite;
+                this.elements.playerName.textContent = this.player.name;
+                this.elements.playerHpBar.value = this.player.hp;
+                this.elements.playerHpBar.max = this.player.maxHp;
+                this.elements.playerHpText.textContent = `HP: ${this.player.hp} / ${this.player.maxHp}`;
+
+                // Update CPU UI
+                this.elements.cpuSprite.textContent = this.cpu.sprite;
+                this.elements.cpuName.textContent = this.cpu.name;
+                this.elements.cpuHpBar.value = this.cpu.hp;
+                this.elements.cpuHpBar.max = this.cpu.maxHp;
+                this.elements.cpuHpText.textContent = `HP: ${this.cpu.hp} / ${this.cpu.maxHp}`;
+            },
+
+            logMessage(message) {
+                const log = this.elements.messageLog;
+                log.innerHTML += `<div>${message}</div>`;
+                log.scrollTop = log.scrollHeight; // Auto-scroll to bottom
+            },
+
+            playerTurn(move) {
+                this.executeMove(this.player, this.cpu, move);
+                if (this.cpu.hp <= 0) {
+                    this.endGame(this.player);
+                    return;
+                }
+
+                // Disable buttons during CPU turn
+                this.toggleActionButtons(false);
+
+                // CPU Turn (with a slight delay for effect)
+                setTimeout(() => {
+                    this.cpuTurn();
+                    if (this.player.hp <= 0) {
+                        this.endGame(this.cpu);
+                    } else {
+                        // Re-enable buttons after CPU turn
+                        this.toggleActionButtons(true);
+                    }
+                }, 1500); // 1.5 second delay
+            },
+
+            cpuTurn() {
+                const randomMoveIndex = Math.floor(Math.random() * this.cpu.moves.length);
+                const move = this.cpu.moves[randomMoveIndex];
+                this.executeMove(this.cpu, this.player, move);
+            },
+
+            executeMove(attacker, defender, move) {
+                this.logMessage(`${attacker.name} used ${move.name}!`);
+
+                // Apply effects first
+                if (move.effect) {
+                    switch (move.effect) {
+                        case "lower_attack":
+                            if (move.target === "cpu" && attacker === this.player) {
+                                this.cpu.attackModifier = Math.max(0.5, this.cpu.attackModifier - 0.1); // Lower CPU attack, min 0.5
+                                this.logMessage(`${this.cpu.name}'s attack fell!`);
+                            } else if (move.target === "player" && attacker === this.cpu) {
+                                this.player.attackModifier = Math.max(0.5, this.player.attackModifier - 0.1); // Lower Player attack
+                                this.logMessage(`${this.player.name}'s attack fell!`);
+                            }
+                            break;
+                        case "lower_defense": // Placeholder for defense logic if added later
+                             this.logMessage(`${defender.name}'s defense fell! (Effect not fully implemented)`);
+                            break;
+                        // Add more effects here
+                    }
+                }
+
+                // Calculate damage
+                if (move.power > 0) {
+                    const damage = Math.floor(move.power * attacker.attackModifier + (Math.random() * 5 - 2)); // Add slight randomness
+                    defender.hp = Math.max(0, defender.hp - damage); // Ensure HP doesn't go below 0
+                    this.logMessage(`${defender.name} took ${damage} damage!`);
+                }
+
+                this.updateUI();
+            },
+
+             toggleActionButtons(enabled) {
+                this.elements.attack1Btn.disabled = !enabled;
+                this.elements.attack2Btn.disabled = !enabled;
+                this.elements.attack3Btn.disabled = !enabled;
+            },
+
+            endGame(winner) {
+                 this.logMessage(`${winner.name} wins!`);
+                 this.elements.actionButtons.classList.add('hidden'); // Hide action buttons
+                 this.elements.resetBattleBtn.classList.remove('hidden'); // Show reset button
+                 this.toggleActionButtons(false); // Ensure buttons are disabled
+            },
+        };
+
+
+        // --- Mario-like Platformer Game Logic ---
+        const platformerGame = {
+            canvas: document.getElementById('gameCanvas'),
+            ctx: null, // Will be set in init
+            running: false,
+            animationFrameId: null,
+            score: 0,
+            scoreElement: document.getElementById('mario-score'),
+            resetJumperBtn: document.getElementById('reset-jumper'),
+
+            player: {
+                x: 50,
+                y: 300,
+                width: 30,
+                height: 40,
+                color: '#e53e3e', // Red color
+                velocityX: 0,
+                velocityY: 0,
+                speed: 4,
+                jumpPower: 12,
+                onGround: false
+            },
+
+            gravity: 0.6,
+            friction: 0.8, // Horizontal friction
+
+            platforms: [
+                { x: 0, y: 380, width: 600, height: 20, color: '#48bb78' }, // Ground
+                { x: 150, y: 300, width: 100, height: 15, color: '#48bb78' },
+                { x: 350, y: 250, width: 120, height: 15, color: '#48bb78' },
+                { x: 50, y: 180, width: 80, height: 15, color: '#48bb78' }
+            ],
+
+            items: [], // Stars to collect
+
+            keys: {
+                left: false,
+                right: false,
+                up: false
+            },
+
+            init() {
+                this.ctx = this.canvas.getContext('2d');
+                if (!this.ctx) {
+                    console.error("Canvas context not supported!");
+                    return;
+                }
+                 this.resetLevel(); // Initial setup
+                 this.setupInputListeners();
+                 this.resetJumperBtn.onclick = () => this.resetLevel();
+                 console.log("Platformer Initialized");
+            },
+
+            resetLevel() {
+                console.log("Resetting level...");
+                // Stop existing loop if running
+                 if (this.animationFrameId) {
+                     cancelAnimationFrame(this.animationFrameId);
+                     this.animationFrameId = null;
+                 }
+                 this.running = false; // Ensure loop doesn't auto-restart yet
+
+                // Reset player position and velocity
+                this.player.x = 50;
+                this.player.y = 300;
+                this.player.velocityX = 0;
+                this.player.velocityY = 0;
+                this.player.onGround = false;
+
+                // Reset score
+                this.score = 0;
+                this.updateScoreDisplay();
+
+                // Reset items (stars)
+                this.items = [
+                    { x: 180, y: 270, width: 15, height: 15, color: '#f6e05e', collected: false }, // Yellow star
+                    { x: 400, y: 220, width: 15, height: 15, color: '#f6e05e', collected: false },
+                    { x: 70, y: 150, width: 15, height: 15, color: '#f6e05e', collected: false },
+                    { x: 500, y: 350, width: 15, height: 15, color: '#f6e05e', collected: false }
+                ];
+
+                // Clear canvas and draw initial state
+                this.clearCanvas();
+                this.drawPlatforms();
+                this.drawItems();
+                this.drawPlayer();
+
+                 // Start the game loop only if the mario game tab is active
+                if (!marioGameContainer.classList.contains('hidden')) {
+                     this.startGameLoop();
+                }
+                 console.log("Level reset complete.");
+            },
+
+            startGameLoop() {
+                if (this.running) return; // Prevent multiple loops
+                this.running = true;
+                console.log("Starting game loop...");
+                const loop = () => {
+                    if (!this.running) return; // Stop if flag is set to false
+                    this.update();
+                    this.draw();
+                    this.animationFrameId = requestAnimationFrame(loop);
+                };
+                this.animationFrameId = requestAnimationFrame(loop);
+            },
+
+            stopGameLoop() {
+                 this.running = false;
+                 if (this.animationFrameId) {
+                     cancelAnimationFrame(this.animationFrameId);
+                     this.animationFrameId = null;
+                     console.log("Game loop stopped.");
+                 }
+            },
+
+            setupInputListeners() {
+                window.addEventListener('keydown', (e) => {
+                    if (marioGameContainer.classList.contains('hidden')) return; // Only listen when game is active
+                    switch (e.key) {
+                        case 'ArrowLeft': this.keys.left = true; break;
+                        case 'ArrowRight': this.keys.right = true; break;
+                        case 'ArrowUp':
+                        case ' ': // Allow spacebar for jump
+                            if (this.player.onGround) { // Only jump if on ground
+                                this.keys.up = true;
+                                this.player.velocityY = -this.player.jumpPower;
+                                this.player.onGround = false; // Player is now airborne
+                            }
+                            break;
+                    }
+                     e.preventDefault(); // Prevent default arrow key scrolling
+                });
+
+                window.addEventListener('keyup', (e) => {
+                     if (marioGameContainer.classList.contains('hidden')) return;
+                    switch (e.key) {
+                        case 'ArrowLeft': this.keys.left = false; break;
+                        case 'ArrowRight': this.keys.right = false; break;
+                        case 'ArrowUp':
+                        case ' ':
+                            this.keys.up = false; break; // Key up doesn't stop jump immediately due to physics
+                    }
+                     e.preventDefault();
+                });
+            },
+
+            update() {
+                // --- Player Movement ---
+                // Horizontal Movement
+                if (this.keys.left) {
+                    this.player.velocityX = -this.player.speed;
+                } else if (this.keys.right) {
+                    this.player.velocityX = this.player.speed;
+                } else {
+                    this.player.velocityX *= this.friction; // Apply friction when no key is pressed
+                }
+
+                // Apply horizontal velocity
+                this.player.x += this.player.velocityX;
+
+                 // Keep player within canvas bounds (horizontal) - simple boundary
+                 if (this.player.x < 0) {
+                     this.player.x = 0;
+                     this.player.velocityX = 0;
+                 }
+                 if (this.player.x + this.player.width > this.canvas.width) {
+                    this.player.x = this.canvas.width - this.player.width;
+                    this.player.velocityX = 0;
+                 }
+
+
+                // --- Vertical Movement & Gravity ---
+                this.player.velocityY += this.gravity;
+                this.player.y += this.player.velocityY;
+                this.player.onGround = false; // Assume not on ground until collision check proves otherwise
+
+                // --- Collision Detection (Platforms) ---
+                this.platforms.forEach(platform => {
+                    // Basic Axis-Aligned Bounding Box (AABB) collision check
+                    if (this.player.x < platform.x + platform.width &&
+                        this.player.x + this.player.width > platform.x &&
+                        this.player.y < platform.y + platform.height &&
+                        this.player.y + this.player.height > platform.y) {
+
+                        // Collision occurred - determine direction
+                        // Check collision from top (landing on platform)
+                        // Player's bottom edge was previously above platform's top edge
+                        const previousPlayerBottom = (this.player.y - this.player.velocityY) + this.player.height;
+                        if (this.player.velocityY >= 0 && previousPlayerBottom <= platform.y) {
+                             this.player.y = platform.y - this.player.height; // Place player on top
+                             this.player.velocityY = 0; // Stop vertical movement
+                             this.player.onGround = true; // Player is on the ground
+                        }
+                        // Check collision from bottom (hitting head)
+                        else if (this.player.velocityY < 0 && (this.player.y - this.player.velocityY) >= platform.y + platform.height) {
+                             this.player.y = platform.y + platform.height;
+                             this.player.velocityY = 0; // Stop upward movement
+                        }
+                        // Check horizontal collision (simplified) - nudge player out
+                        else {
+                             // If moving right during collision
+                             if (this.player.velocityX > 0 && (this.player.x + this.player.width - this.player.velocityX) <= platform.x) {
+                                 this.player.x = platform.x - this.player.width;
+                                 this.player.velocityX = 0;
+                             }
+                             // If moving left during collision
+                             else if (this.player.velocityX < 0 && (this.player.x - this.player.velocityX) >= platform.x + platform.width) {
+                                 this.player.x = platform.x + platform.width;
+                                 this.player.velocityX = 0;
+                             }
+                        }
+                    }
+                });
+
+
+                 // --- Collision Detection (Items) ---
+                 this.items.forEach((item, index) => {
+                     if (!item.collected &&
+                         this.player.x < item.x + item.width &&
+                         this.player.x + this.player.width > item.x &&
+                         this.player.y < item.y + item.height &&
+                         this.player.y + this.player.height > item.y) {
+
+                         item.collected = true;
+                         this.score += 10; // Increase score
+                         this.updateScoreDisplay();
+                         console.log("Collected item! Score:", this.score);
+                     }
+                 });
+
+                 // --- Fall off screen (reset) ---
+                 if (this.player.y > this.canvas.height) {
+                     console.log("Player fell off screen.");
+                     this.resetLevel(); // Reset if player falls too far
+                 }
+            },
+
+             updateScoreDisplay() {
+                this.scoreElement.textContent = `Score: ${this.score}`;
+            },
+
+            clearCanvas() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                 // Optional: Draw a background if needed
+                 // this.ctx.fillStyle = '#a3bfb1'; // Light green-grey background already set via CSS
+                 // this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            },
+
+            drawPlayer() {
+                this.ctx.fillStyle = this.player.color;
+                this.ctx.fillRect(this.player.x, this.player.y, this.player.width, this.player.height);
+
+                 // Simple "face" indication
+                 this.ctx.fillStyle = 'white';
+                 this.ctx.fillRect(this.player.x + 5, this.player.y + 8, 5, 5); // Left eye
+                 this.ctx.fillRect(this.player.x + this.player.width - 10, this.player.y + 8, 5, 5); // Right eye
+            },
+
+            drawPlatforms() {
+                this.platforms.forEach(platform => {
+                    this.ctx.fillStyle = platform.color;
+                    this.ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+                });
+            },
+
+             drawItems() {
+                 this.items.forEach(item => {
+                     if (!item.collected) {
+                         this.ctx.fillStyle = item.color;
+                         // Draw a simple star shape
+                         this.drawStar(item.x + item.width / 2, item.y + item.height / 2, 5, item.width / 2, item.width / 4);
+                     }
+                 });
+             },
+
+             // Helper function to draw a star
+             drawStar(cx, cy, spikes, outerRadius, innerRadius) {
+                let rot = Math.PI / 2 * 3;
+                let x = cx;
+                let y = cy;
+                let step = Math.PI / spikes;
+
+                this.ctx.beginPath();
+                this.ctx.moveTo(cx, cy - outerRadius)
+                for (let i = 0; i < spikes; i++) {
+                    x = cx + Math.cos(rot) * outerRadius;
+                    y = cy + Math.sin(rot) * outerRadius;
+                    this.ctx.lineTo(x, y)
+                    rot += step
+
+                    x = cx + Math.cos(rot) * innerRadius;
+                    y = cy + Math.sin(rot) * innerRadius;
+                    this.ctx.lineTo(x, y)
+                    rot += step
+                }
+                this.ctx.lineTo(cx, cy - outerRadius);
+                this.ctx.closePath();
+                this.ctx.lineWidth=1; // Thin border for star
+                this.ctx.strokeStyle= '#d69e2e'; // Darker yellow border
+                this.ctx.stroke();
+                this.ctx.fillStyle=this.items[0]?.color || '#f6e05e'; // Use item color or default
+                this.ctx.fill();
+            },
+
+            draw() {
+                this.clearCanvas();
+                this.drawPlatforms();
+                this.drawItems();
+                this.drawPlayer();
+            }
+        };
+
+        // --- Initial Setup ---
+        // Show the first game by default (e.g., Pokémon)
+        showGame('pokemon');
+         // Initialize platformer physics/state but don't start loop until tab is clicked
+         platformerGame.init();
+
+         // Add listener to stop platformer loop when switching away
+         showPokemonButton.addEventListener('click', () => platformerGame.stopGameLoop());
+         showMarioButton.addEventListener('click', () => {
+             // Ensure it's initialized and start loop if not running
+             if (!platformerGame.running) {
+                 platformerGame.resetLevel(); // Reset level state when switching back
+                 platformerGame.startGameLoop();
+             }
+         });
+
+    </script>
+
+</body>
+</html>

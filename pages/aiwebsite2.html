@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Mad Libs!</title>
+<style>
+  body {
+    font-family: sans-serif;
+    margin: 20px;
+    background-color: #f4f4f4;
+  }
+  .container {
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  h1 {
+    text-align: center;
+    color: #333;
+  }
+  .input-group {
+    margin-bottom: 15px;
+  }
+  label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #555;
+  }
+  input[type="text"] {
+    width: calc(100% - 12px);
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+  }
+  button {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+  }
+  button:hover {
+    background-color: #0056b3;
+  }
+  #story-container {
+    margin-top: 20px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+    white-space: pre-wrap; /* Preserve line breaks */
+  }
+  #story-container h2 {
+    margin-top: 0;
+    color: #333;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>Mad Libs!</h1>
+
+    <div id="input-fields">
+      </div>
+
+    <button onclick="generateMadLib()">Generate Story</button>
+
+    <div id="story-container" style="display: none;">
+      <h2>Your Mad Lib Story:</h2>
+      <p id="mad-lib-story"></p>
+    </div>
+  </div>
+
+  <script>
+    const blanks = ["adjective", "noun", "verb (present tense)", "adverb", "noun"];
+    const storyParts = [
+      "The ", blanks[0], " ", blanks[1], " ", blanks[2], " ", blanks[3], " over the ", blanks[4], "."
+    ];
+    const inputFieldsDiv = document.getElementById("input-fields");
+    const storyContainer = document.getElementById("story-container");
+    const madLibStoryParagraph = document.getElementById("mad-lib-story");
+
+    function renderInputFields() {
+      inputFieldsDiv.innerHTML = "";
+      blanks.forEach(blank => {
+        const inputGroup = document.createElement("div");
+        inputGroup.classList.add("input-group");
+        const label = document.createElement("label");
+        label.textContent = `Enter a ${blank}:`;
+        const input = document.createElement("input");
+        input.type = "text";
+        input.id = blank.replace(/ /g, "-"); // Use a valid ID
+        inputGroup.appendChild(label);
+        inputGroup.appendChild(input);
+        inputFieldsDiv.appendChild(inputGroup);
+      });
+    }
+
+    function generateMadLib() {
+      const inputs = {};
+      blanks.forEach(blank => {
+        const inputElement = document.getElementById(blank.replace(/ /g, "-"));
+        if (inputElement && inputElement.value.trim() !== "") {
+          inputs[blank] = inputElement.value;
+        } else {
+          alert(`Please fill in the ${blank} field.`);
+          return;
+        }
+      });
+
+      let completedStory = "";
+      storyParts.forEach(part => {
+        if (blanks.includes(part)) {
+          completedStory += inputs[part];
+        } else {
+          completedStory += part;
+        }
+      });
+
+      madLibStoryParagraph.textContent = completedStory;
+      storyContainer.style.display = "block";
+    }
+
+    // Initial rendering of input fields
+    renderInputFields();
+  </script>
+</body>
+</html>
